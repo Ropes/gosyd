@@ -1,18 +1,12 @@
 Go 1.6 release party
-YOUR MEETUP
+PDXGo
 17 Feb 2016
 
-YOUR NAME
-@YOURTWITTER
+PDX Go
+@pdxgolang
 http://talks.godoc.org/github.com/davecheney/gosyd/go1.6.slide
 
-* DRAFT
-
-THIS IS A DRAFT PRESENTATION
-
 Source: [[https://github.com/davecheney/gosyd/blob/master/go1.6.slide]]
-
-PLEASE SEND CORRECTIONS / ADDITIONS BEFORE FEB 17
 
 * DEMONSTRATIONS
 
@@ -20,7 +14,7 @@ THE CODE SAMPLES IN THIS SLIDE DECK REQUIRE GO 1.6
 
 THE WILL NOT WORK FROM TALKS.GOLANG.ORG UNTIL AFTER GO 1.6 IS RELEASED
 
-TO RUN THEM LOCALLY YOU WILL NEED GO 1.6BETA1 OR LATER
+TO RUN THEM LOCALLY YOU WILL NEED GO 1.6BETA1 OR LATER(go1.6.2rc)
 
 * Welcome
 
@@ -119,6 +113,9 @@ Go 1.6 adds transparent support in the `net/http` package for the new HTTP/2 pro
 
 Go clients and servers will automatically use HTTP/2 as appropriate when using HTTPS.
 
+  Go http server will only support HTTP/2 if you use listnenTLS
+  Client will only upgrade to HTTP/2 on TLS connections
+
 Programs that must disable HTTP/2 can do so by setting `Transport.TLSNextProto` (for clients) or `Server.TLSNextProto` (for servers) to a non-nil, empty map.
 
 Read more
@@ -168,6 +165,8 @@ Go 1.5 added an alternative syntax using a single argument that is itself a name
 
 In Go 1.5 the old syntax was still accepted, after printing a warning suggesting use of the new syntax instead. Go 1.6 continues to accept the old syntax and print the warning. Go 1.7 will remove support for the old syntax.
 
+[[https://medium.com/@joshroppo/setting-go-1-5-variables-at-compile-time-for-versioning-5b30a965d33e#.pazcwc91z][Using Go flags version binaries]]
+
 * maps panic if you misuse them
 
 The runtime has added lightweight, best-effort detection of concurrent misuse of maps.
@@ -213,8 +212,6 @@ It can be disabled explicitly by setting the GO15VENDOREXPERIMENT environment va
 The most likely problem caused by enabling vendoring by default happens in source trees containing an existing directory named vendor that does not expect to be interpreted according to new vendoring semantics. In this case, the simplest fix is to rename the directory to anything other than vendor and update any affected import paths.
 
 * Vendoring example
-
-TODO: WRITE EXAMPLE
 
 * Vendored code matches ./...
 
