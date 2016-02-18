@@ -119,7 +119,7 @@ Go 1.6 adds transparent support in the `net/http` package for the new HTTP/2 pro
 
 Go clients and servers will automatically use HTTP/2 as appropriate when using HTTPS.
 
-  Go http server will only support HTTP/2 if you use listnenTLS
+  Go http server will only support HTTP/2 if you use listenTLS
   Client will only upgrade to HTTP/2 on TLS connections
 
 Programs that must disable HTTP/2 can do so by setting `Transport.TLSNextProto` (for clients) or `Server.TLSNextProto` (for servers) to a non-nil, empty map.
