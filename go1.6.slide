@@ -1,24 +1,18 @@
 Go 1.6 release party
-YOUR MEETUP
+PDXGo
 17 Feb 2016
 
-YOUR NAME
-@YOURTWITTER
+PDX Go
+@pdxgolang
 http://talks.godoc.org/github.com/davecheney/gosyd/go1.6.slide
 
-* DRAFT
-
-THIS IS A DRAFT PRESENTATION
-
 Source: [[https://github.com/davecheney/gosyd/blob/master/go1.6.slide]]
-
-PLEASE SEND CORRECTIONS / ADDITIONS BEFORE FEB 17
 
 * DEMONSTRATIONS
 
 THE CODE SAMPLES IN THIS SLIDE DECK REQUIRE GO 1.6
 
-THE WILL NOT WORK FROM TALKS.GOLANG.ORG UNTIL AFTER GO 1.6 IS RELEASED
+THEY WILL NOT WORK FROM TALKS.GOLANG.ORG UNTIL AFTER GO 1.6 IS RELEASED
 
 TO RUN THEM LOCALLY YOU WILL NEED GO 1.6BETA1 OR LATER
 
@@ -26,11 +20,17 @@ TO RUN THEM LOCALLY YOU WILL NEED GO 1.6BETA1 OR LATER
 
 Today (Feb 17th) is an attempt at a release party for Go 1.6 involving as many Go user groups as possible.
 
-There are NNN Go user groups taking part, you can find [[https://github.com/golang/go/wiki/Go-1.6-release-party#whos-involved][a list of them here]].
+There are 50 Go user groups taking part, you can find [[https://github.com/golang/go/wiki/Go-1.6-release-party#whos-involved][a list of them here]].
 
 This presentation is based _heavily_ on the [[http://tip.golang.org/doc/go1.6][official Go 1.6 release notes]].
 
 This presentation contains lots of links to further reading. You can find it online, [[http://talks.godoc.org/github.com/davecheney/gosyd/go1.6.slide][talks.godoc.org/github.com/davecheney/gosyd/go1.6.slide]]
+
+* Artwork
+
+.image go1.6/Go_release_party_1.6_wide.png 500 _
+
+_Credit_: [[https://groups.google.com/d/msg/go-meetup-organisers/5FFI9Azo2TE/_lyJU_xMEgAJ][Frédéric Menez / Golang Paris meetup]].
 
 * Go 1.6
 
@@ -56,7 +56,7 @@ Release timeline:
 - Go 1.3 released 18th June, 2014
 - Go 1.4 released 10th December, 2014
 - [[https://talks.golang.org/2015/state-of-go.slide#8][Go 1.5]] released 19th August, 2015
-- Go 1.6 is expected to be released February, 2016
+- Go 1.6 Released 17th February 2016! They made the date! 
 
 * Supported platforms
 
@@ -119,6 +119,9 @@ Go 1.6 adds transparent support in the `net/http` package for the new HTTP/2 pro
 
 Go clients and servers will automatically use HTTP/2 as appropriate when using HTTPS.
 
+  Go http server will only support HTTP/2 if you use listenTLS
+  Client will only upgrade to HTTP/2 on TLS connections
+
 Programs that must disable HTTP/2 can do so by setting `Transport.TLSNextProto` (for clients) or `Server.TLSNextProto` (for servers) to a non-nil, empty map.
 
 Read more
@@ -128,9 +131,9 @@ Read more
 
 * Sharing pointers between Go and C
 
-The major change is the definition of rules for sharing Go pointers with C code, to ensure that such C code can coexist with Go's garbage collector.
+The major change to cgo in Go 1.6 is the rules for sharing Go pointers with C code, to ensure that such C code can coexist with Go's garbage collector, have been clarified.
 
-Go and C may share memory allocated by Go when
+Go and C may share memory allocated by Go when:
 
 - a pointer to that memory is passed to C as part of a cgo call,
 - and provided that the memory itself contains no pointers to Go-allocated memory,
@@ -168,6 +171,8 @@ Go 1.5 added an alternative syntax using a single argument that is itself a name
 
 In Go 1.5 the old syntax was still accepted, after printing a warning suggesting use of the new syntax instead. Go 1.6 continues to accept the old syntax and print the warning. Go 1.7 will remove support for the old syntax.
 
+[[https://medium.com/@joshroppo/setting-go-1-5-variables-at-compile-time-for-versioning-5b30a965d33e#.pazcwc91z][Using Go flags version binaries]]
+
 * maps panic if you misuse them
 
 The runtime has added lightweight, best-effort detection of concurrent misuse of maps.
@@ -181,6 +186,10 @@ If the runtime detects this condition, it prints a diagnosis and crashes the pro
         /usr/lib/go/src/runtime/panic.go:530 +0x90 fp=0xc8202eb838 sp=0xc8202eb820
 
 The best way to find out more about the problem is to run the program under the race detector.
+
+* maps panic if you misuse them (example)
+
+.play go1.6/map.go /START OMIT/,/END OMIT/
 
 * Panic messages are shorter by default
 
@@ -196,9 +205,15 @@ Read more:
 
 - [[http://dave.cheney.net/2015/11/29/a-whirlwind-tour-of-gos-runtime-environment-variables#GOTRACEBACK][A whirlwind tour of Go’s runtime environment variables]]
 
+* Panic messages are shorter by default (example)
+
+.play go1.6/crashy.go /START OMIT/,/END OMIT/
+
 * Windows timer resolution
 
 On Windows, Go programs in Go 1.5 and earlier forced the global Windows timer resolution to 1ms at startup by calling `timeBeginPeriod(1)`.
+
+This makes Windows users' batteries sad.
 
 Go 1.6 no longer needs this for good scheduler performance, and changing the global timer resolution caused problems on some systems, so the call has been removed.
 
@@ -210,24 +225,42 @@ Go 1.6 keeps the vendoring support, no longer considered experimental, and enabl
 
 It can be disabled explicitly by setting the GO15VENDOREXPERIMENT environment variable to 0. Go 1.7 will remove support for the environment variable.
 
-The most likely problem caused by enabling vendoring by default happens in source trees containing an existing directory named vendor that does not expect to be interpreted according to new vendoring semantics. In this case, the simplest fix is to rename the directory to anything other than vendor and update any affected import paths.
+The most likely problem caused by enabling vendoring by default happens in source trees containing an existing directory named `vendor` that does not expect to be interpreted according to new vendoring semantics. In this case, the simplest fix is to rename the directory to anything other than vendor and update any affected import paths.
 
-* Vendoring example
+* How does it work?
 
-TODO: WRITE EXAMPLE
+        /home/user/gocode/
+            src/
+                server-one/
+                    main.go            (import "github.com/gorilla/mux")
+                server-two/
+                    main.go            (import "github.com/gorilla/mux")
+                    vendor/
+                        github.com/
+                            gorilla/
+                                mux/
+                                    ...
 
-* Vendored code matches ./...
+`server-one` uses the `mux` package in
+
+	$GOPATH/src/github.com/gorilla/mux
+
+`server-two` uses the `mux` package in
+
+	$GOPATH/src/server-two/vendor/github.com/gorilla/mux
+
+* Vendoring (demo)
+
+* Vendoring gotchas
+
+Vendored code matches ./...
 
 If you're used to doing
 
    % cd $GOPATH/github.com/you/repo
    % go test ./...
 
-Be aware that vendored packages, like
-
-   $GOPATH/github.com/you/repo/vendor/github.com/them/repo
-
-Will match the go tool glob operator `...`, and probably cause the test to fail.
+The go tool glob operator `...`, _also_matches_ things in your `vendor/` directory.
 
 The workaround is to filter out vendored packages by name
 
@@ -247,12 +280,6 @@ Such interoperation useful mainly for testing a program containing suspect C or 
 
 This should probably be considered _experimental_ and only available on linux/amd64.
 
-* Shared library support
-
-TODO: SHOW EXAMPLE OF COMPILING USING SHARED LIBRARIES
-
-_note:_ dynamic loading of code at run time (plugins) is still not supported.
-
 * Performance
 
 On average the programs in the Go 1 benchmark suite run a few percent faster in Go 1.6 than they did in Go 1.5.
@@ -271,6 +298,12 @@ The definition of `Sort` makes no guarantee about the final order of _equal_valu
 
 Such programs should either refine their Less implementations to report the desired order or should switch to `sort.Stable`, which preserves the original input order of equal values.
 
+* sort.Sort example
+
+.play go1.6/sort.go /START OMIT/,/END OMIT/
+
+_Change_sort.Sort_to_sort.Stable_and_observe_the_effect_on_the_Bills_
+
 * Stripping whitespace with text/template
 
 It is now possible to trim spaces around template actions, which can make template definitions more readable.
@@ -278,19 +311,6 @@ It is now possible to trim spaces around template actions, which can make templa
 A minus sign at the beginning of an action says to trim space before the action, and a minus sign at the end of an action says to trim space after the action.
 
 .play go1.6/template.go
-
-* {{block}} action
-
-The new {{block}} action, combined with allowing redefinition of named templates, provides a simple way to define pieces of a template that can be replaced in different instantiations.
-
-For example, the template below defines the basic formatting of a web page:
-
-    <title>{{block "title"}}Page Title{{end}}</title>
-    <body>
-    <h1>{{template "title"}}</h1>
-    {{block "page"}}Main text{{end}}
-
-A program can then overlay that template with new definitions for the "title" and "page" blocks to reuse the formatting for another page.
 
 * Go vet command
 
@@ -325,7 +345,7 @@ Read more
 
 Joe Tsai has put a lot of effort into the archive/tar package, correcting many bugs in rare corner cases of the file format.
 
-One visible change is that the Reader type's Read method now presents the content of special file types as being empty, returning io.EOF immediately.
+One visible change is that the Reader type's Read method now presents the content of special file types as being empty, returning `io.EOF` immediately.
 
 * bufio
 
@@ -336,7 +356,8 @@ This makes it possible, when needed, to scan tokens larger than MaxScanTokenSize
 Also for the Scanner, the package now defines the ErrFinalToken error value, for use by split functions to abort processing or to return a final empty token.
 
 * bufio (example)
-.code go1.6/scan.go /START OMIT/,/END OMIT/
+
+.play go1.6/scan.go /START OMIT/,/END OMIT/
 
 * net/* changes
 
@@ -350,7 +371,7 @@ The net/http package has a number of minor additions beyond the HTTP/2 support a
 * net/* changes (cont.)
 - The net/http/httptest package's ResponseRecorder now initializes a default Content-Type header using the same content-sniffing algorithm as in http.Server.
 - The net/url package's Parse is now stricter and more spec-compliant regarding the parsing of host names. For example, spaces in the host name are no longer accepted.
-- net/url.Error type now implements net.Error.
+- net/url.Error type now implements `net.Error` to provide `Temporary` and `Timeout` behaviours.
 
 * GODEBUG=netdns
 
@@ -372,15 +393,13 @@ Read more
 
 * os
 
-The os package's IsExist, IsNotExist, and IsPermission now return correct results when inquiring about an SyscallError.
+The os package's `IsExist`, `IsNotExist`, and `IsPermission` now return correct results when inquiring about a `SyscallError`.
 
-This is useful if you have an unknown error value and want
+On Unix-like systems, when a write to `os.Stdout` or `os.Stderr` fails due to a broken pipe error, the program will raise a `SIGPIPE` signal. By default this will cause the program to exit; this may be changed by calling the `os/signal.Notify` function for `syscall.SIGPIPE`. 
 
-On Unix-like systems, when a write to os.Stdout or os.Stderr (more precisely, an os.File opened for file descriptor 1 or 2) fails due to a broken pipe error, the program will raise a SIGPIPE signal. By default this will cause the program to exit; this may be changed by calling the os/signal Notify function for syscall.SIGPIPE. A write to a broken pipe on a file descriptor other 1 or 2 will simply return syscall.EPIPE (possibly wrapped in os.PathError and/or os.SyscallError) to the caller.
+In Go 1.6 a write to a broken pipe on a file descriptor other 1 or 2 will simply return `syscall.EPIPE` (possibly wrapped in `os.PathError` and/or `os.SyscallError`) to the caller.
 
 The old behavior of raising an uncatchable SIGPIPE signal after 10 consecutive writes to a broken pipe no longer occurs.
-
-TODO: WRITE EXAMPLE
 
 * regexp
 
@@ -402,3 +421,11 @@ The time package's Parse function has always rejected any day of month larger th
 In Go 1.6, Parse now also rejects February 29 in non-leap years, February 30, February 31, April 31, June 31, September 31, and November 31.
 
 .play go1.6/parse.go
+
+* Go 1.6
+
+.link https://golang.org/dl/
+
+.image go1.6/GoLaunch_Front.png 440 _
+
+_Credit_: [[http://www.meetup.com/golangsf/events/226090306/][iron.io / GoSF Meetup]].
